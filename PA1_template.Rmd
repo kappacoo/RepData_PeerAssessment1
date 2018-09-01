@@ -8,18 +8,97 @@ output:
 
 ## Loading and preprocessing the data
 
+I'm going to use unzip function then read.csv function. 
 
+```{r, echo = TRUE}
+
+unzip("activity.zip")
+activity <- read.csv("activity.csv", stringsAsFactors = F)
+
+activity$date <- as.Date(activity$date)
+
+```
 
 ## What is mean total number of steps taken per day?
 
+```{r, echo = TRUE}
 
+Daily_steps <- aggregate(steps ~ date, data = activity, sum)
+
+# histogram of the daily steps 
+hist(Daily_steps$steps, xlab = "Steps per day", main = "Histogram of steps per day", breaks = 20, col = "#A40B92")
+
+# mean steps per day 
+mean(Daily_steps$steps)
+
+# median steps per day 
+median(Daily_steps$steps)
+```
 
 ## What is the average daily activity pattern?
 
+```{r, echo = TRUE}
+
+
+interval_average <- aggregate(steps ~ interval, data = activity, mean)
+
+plot(interval_average, type = "l", main = "Average steps per interval", xlab = "Interval (mins)")
+
+max(interval_average$steps)
+row_index <- which(interval_average$steps == max(interval_average$steps))
+
+# interval that has the maximum number of steps 
+interval_average$interval[row_index]
+
+```
 
 
 ## Imputing missing values
 
+```{r}
 
+## how many NAs 
+sum(is.na(activity$steps))
+
+## imputing steps using mean 
+steps_imputed <- activity
+steps_imputed$steps[is.na(steps_imputed$steps)] <- mean(activity$steps,na.rm =T)
+
+sum(is.na(steps_imputed$steps))
+
+Daily_steps2 <- aggregate(steps ~ date, data = steps_imputed, sum)
+
+# histogram of the daily steps 
+hist(Daily_steps2$steps, xlab = "Steps per day", main = "Histogram of steps per day", breaks = 20, col = "#A40B92")
+
+# mean steps per day 
+mean(Daily_steps2$steps)
+
+# median steps per day 
+median(Daily_steps2$steps)
+
+```
+
+After imputation, mean steps per day stays the same, but median increases slightly to `r format(median(Daily_steps2$steps), scientific = F)`.
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r, echo=TRUE}
+
+steps_imputed$weekdays <- weekdays(steps_imputed$date)
+
+steps_imputed$weekdays <- sub("Monday|Tuesday|Wednesday|Thursday|Friday", "weekday", steps_imputed$weekdays)
+
+steps_imputed$weekdays <- sub("Saturday|Sunday", "weekend", steps_imputed$weekdays)
+
+steps_imputed$weekdays <- as.factor(steps_imputed$weekdays)
+
+### 
+
+interval_average_weekdays <- aggregate(steps ~ interval*weekdays, data = steps_imputed, mean)
+
+ggplot(interval_average_weekdays, aes(x = interval, y = steps, group = weekdays)) + geom_line() + facet_wrap(~weekdays)
+
+
+```
+
